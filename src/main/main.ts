@@ -11,9 +11,10 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserView, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import electronLocalshortcut from 'electron-localshortcut';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
@@ -79,6 +80,26 @@ const createWindow = async () => {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
+  });
+
+  const view = new BrowserView();
+  const wwwView = new BrowserView({
+    webPreferences: { nodeIntegration: false },
+  });
+  const dialogView = new BrowserView({
+    webPreferences: { nodeIntegration: false },
+  });
+  mainWindow.addBrowserView(wwwView);
+  mainWindow.addBrowserView(dialogView);
+  wwwView.setBounds({ x: 0, y: 0, width: 1024, height: 700 });
+  dialogView.setBounds({ x: 0, y: 0, width: 1024, height: 700 });
+  wwwView.webContents.loadURL('https://www.google.com');
+  dialogView.webContents.loadFile(`${__dirname}/../renderer/modal.html`);
+  electronLocalshortcut.register(mainWindow, 'Ctrl+A', () => {
+    console.log('KeyDown - Ctrl+A');
+  });
+  mainWindow.on('closed', function () {
+    mainWindow = null;
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
